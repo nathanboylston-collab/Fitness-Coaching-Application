@@ -12,6 +12,7 @@ import {
 import {
   addNote,
   regenerateInvite,
+  sendCheckIn,
   toggleArchived,
   updateProfile,
 } from "./actions";
@@ -30,12 +31,24 @@ const STATUS_LABEL: Record<string, string> = {
   ARCHIVED: "Archived",
 };
 
+const OVERDUE_AFTER_DAYS = 8;
+
+function checkInStatusLabel(checkIn: { status: string; createdAt: Date }) {
+  if (checkIn.status === "COMPLETED") return "Completed";
+  const ageDays =
+    (Date.now() - checkIn.createdAt.getTime()) / (1000 * 60 * 60 * 24);
+  return ageDays > OVERDUE_AFTER_DAYS ? "Overdue" : "Pending";
+}
+
 export default async function ClientDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clientId: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { clientId } = await params;
+  const { error } = await searchParams;
   const coach = await getCurrentCoach();
 
   const client = await prisma.client.findFirst({
@@ -45,6 +58,7 @@ export default async function ClientDetailPage({
       invite: true,
       notes: { orderBy: { createdAt: "desc" } },
       programs: { where: { isActive: true }, take: 1 },
+      checkIns: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -65,6 +79,8 @@ export default async function ClientDetailPage({
   const boundAddNote = addNote.bind(null, client.id);
   const boundToggleArchived = toggleArchived.bind(null, client.id);
   const boundRegenerateInvite = regenerateInvite.bind(null, client.id);
+  const boundSendCheckIn = sendCheckIn.bind(null, client.id);
+  const hasPendingCheckIn = client.checkIns.some((c) => c.status === "PENDING");
 
   return (
     <div className="flex flex-col gap-10">
@@ -93,6 +109,8 @@ export default async function ClientDetailPage({
           </button>
         </form>
       </div>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       {inviteLink && (
         <section className="flex flex-col gap-3 rounded-md border border-neutral-200 bg-neutral-50 p-4">
@@ -128,6 +146,58 @@ export default async function ClientDetailPage({
             Manage programs →
           </Link>
         </div>
+      </section>
+
+      <section className="flex flex-col gap-4 border-t border-neutral-200 pt-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+            Check-ins
+          </h2>
+          {hasPendingCheckIn ? (
+            <span className="text-sm text-neutral-500">
+              A check-in is already pending
+            </span>
+          ) : (
+            <form action={boundSendCheckIn}>
+              <button type="submit" className={secondaryButtonStyle}>
+                Send check-in
+              </button>
+            </form>
+          )}
+        </div>
+        {client.checkIns.length === 0 ? (
+          <p className="text-sm text-neutral-500">No check-ins yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {client.checkIns.map((checkIn) => {
+              const label = checkInStatusLabel(checkIn);
+              const badgeStyle =
+                label === "Completed"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : label === "Overdue"
+                    ? "bg-red-50 text-red-700"
+                    : "bg-neutral-100 text-neutral-600";
+              return (
+                <li
+                  key={checkIn.id}
+                  className="flex items-center justify-between border-t border-neutral-100 pt-2 first:border-0 first:pt-0"
+                >
+                  <Link
+                    href={`/dashboard/clients/${client.id}/checkins/${checkIn.id}`}
+                    className="text-sm text-neutral-700 transition-colors hover:text-neutral-900"
+                  >
+                    Week of {checkIn.weekOf.toLocaleDateString()}
+                  </Link>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${badgeStyle}`}
+                  >
+                    {label}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <section className="flex flex-col gap-5 border-t border-neutral-200 pt-8">

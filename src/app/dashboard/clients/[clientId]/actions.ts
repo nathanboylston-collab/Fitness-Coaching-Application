@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getCurrentCoach, getOwnedClient } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateInviteToken, inviteExpiryDate } from "@/lib/invite-token";
@@ -74,6 +75,29 @@ export async function regenerateInvite(clientId: string) {
       expiresAt: inviteExpiryDate(),
       acceptedAt: null,
     },
+  });
+
+  revalidatePath(`/dashboard/clients/${clientId}`);
+}
+
+export async function sendCheckIn(clientId: string) {
+  const coach = await getCurrentCoach();
+  await getOwnedClient(coach.id, clientId);
+
+  const existingPending = await prisma.checkIn.findFirst({
+    where: { clientId, status: "PENDING" },
+  });
+
+  if (existingPending) {
+    redirect(
+      `/dashboard/clients/${clientId}?error=${encodeURIComponent(
+        "This client already has a pending check-in.",
+      )}`,
+    );
+  }
+
+  await prisma.checkIn.create({
+    data: { clientId, weekOf: new Date() },
   });
 
   revalidatePath(`/dashboard/clients/${clientId}`);

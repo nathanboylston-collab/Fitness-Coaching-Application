@@ -155,6 +155,13 @@ enum CheckInStatus {
   OVERDUE
 }
 
+enum CheckInResponseType {
+  RATING_1_10
+  NUMBER
+  BOOLEAN
+  TEXT
+}
+
 model CheckIn {
   id            String        @id @default(uuid())
   clientId      String
@@ -163,19 +170,29 @@ model CheckIn {
   programWeek   ProgramWeek?  @relation(fields: [programWeekId], references: [id], onDelete: SetNull)
   weekOf        DateTime
   status        CheckInStatus @default(PENDING)
-  bodyWeight    Float?
-  sleepQuality  Int?
-  stressLevel   Int?
-  energyLevel   Int?
-  sorenessNotes String?
-  adherencePct  Int?
-  notes         String?
   submittedAt   DateTime?
   createdAt     DateTime      @default(now())
 
-  summary CheckInSummary?
+  responses CheckInResponse[]
+  summary   CheckInSummary?
 
   @@index([clientId])
+}
+
+model CheckInResponse {
+  id            String              @id @default(uuid())
+  checkInId     String
+  checkIn       CheckIn             @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  questionKey   String
+  questionLabel String
+  type          CheckInResponseType
+  order         Int
+  numericValue  Float?
+  textValue     String?
+  boolValue     Boolean?
+
+  @@unique([checkInId, questionKey])
+  @@index([checkInId])
 }
 
 model CheckInSummary {

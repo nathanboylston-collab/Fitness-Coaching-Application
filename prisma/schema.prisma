@@ -1,0 +1,182 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Coach and Client both authenticate via Supabase Auth (auth.users, outside
+// Prisma's schema). authUserId stores that auth.users.id (the JWT `sub`) so
+// app code can look up the acting Coach/Client from a session.
+
+model Coach {
+  id         String   @id @default(uuid())
+  authUserId String   @unique
+  name       String
+  email      String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  clients Client[]
+}
+
+enum ClientStatus {
+  INVITED
+  ACTIVE
+  ARCHIVED
+}
+
+model Client {
+  id         String       @id @default(uuid())
+  authUserId String?      @unique // set once the client accepts their invite
+  coachId    String
+  coach      Coach        @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  name       String
+  email      String
+  status     ClientStatus @default(INVITED)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  profile  ClientProfile?
+  notes    CoachNote[]
+  programs Program[]
+  checkIns CheckIn[]
+  invite   ClientInvite?
+
+  @@index([coachId])
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model ClientProfile {
+  id              String           @id @default(uuid())
+  clientId        String           @unique
+  client          Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  goals           String?
+  experienceLevel ExperienceLevel?
+  schedule        String?
+  equipment       String[]
+  preferences     String?
+  limitations     String?
+  updatedAt       DateTime         @updatedAt
+}
+
+model CoachNote {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([clientId])
+}
+
+model ClientInvite {
+  id         String    @id @default(uuid())
+  clientId   String    @unique
+  client     Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  token      String    @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model Program {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  weeks ProgramWeek[]
+
+  @@index([clientId])
+}
+
+model ProgramWeek {
+  id         String  @id @default(uuid())
+  programId  String
+  program    Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  weekNumber Int
+  notes      String?
+
+  workouts Workout[]
+
+  @@unique([programId, weekNumber])
+}
+
+model Workout {
+  id            String      @id @default(uuid())
+  programWeekId String
+  programWeek   ProgramWeek @relation(fields: [programWeekId], references: [id], onDelete: Cascade)
+  dayOfWeek     Int
+  name          String
+  notes         String?
+
+  exercises ExercisePrescription[]
+
+  @@index([programWeekId])
+}
+
+model ExercisePrescription {
+  id           String  @id @default(uuid())
+  workoutId    String
+  workout      Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  order        Int
+  exerciseName String
+  sets         Int
+  reps         String
+  load         String?
+  notes        String?
+
+  @@index([workoutId])
+}
+
+enum CheckInStatus {
+  PENDING
+  COMPLETED
+  OVERDUE
+}
+
+model CheckIn {
+  id            String        @id @default(uuid())
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  weekOf        DateTime
+  status        CheckInStatus @default(PENDING)
+  bodyWeight    Float?
+  sleepQuality  Int?
+  stressLevel   Int?
+  energyLevel   Int?
+  sorenessNotes String?
+  adherencePct  Int?
+  notes         String?
+  submittedAt   DateTime?
+  createdAt     DateTime      @default(now())
+
+  summary CheckInSummary?
+
+  @@index([clientId])
+}
+
+model CheckInSummary {
+  id          String   @id @default(uuid())
+  checkInId   String   @unique
+  checkIn     CheckIn  @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  summaryText String
+  model       String
+  createdAt   DateTime @default(now())
+}

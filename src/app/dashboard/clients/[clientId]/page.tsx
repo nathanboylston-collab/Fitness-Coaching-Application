@@ -12,6 +12,26 @@ import {
 
 const EXPERIENCE_LEVELS = ["BEGINNER", "INTERMEDIATE", "ADVANCED"] as const;
 
+const STATUS_STYLE: Record<string, string> = {
+  INVITED: "bg-neutral-100 text-neutral-600",
+  ACTIVE: "bg-emerald-50 text-emerald-700",
+  ARCHIVED: "bg-neutral-100 text-neutral-400",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  INVITED: "Invited",
+  ACTIVE: "Active",
+  ARCHIVED: "Archived",
+};
+
+const inputStyle =
+  "rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900";
+const labelStyle = "text-sm font-medium text-neutral-700";
+const secondaryButtonStyle =
+  "inline-flex items-center justify-center rounded-md border border-neutral-300 px-3.5 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50";
+const primaryButtonStyle =
+  "inline-flex items-center justify-center self-start rounded-md bg-neutral-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-700";
+
 export default async function ClientDetailPage({
   params,
 }: {
@@ -48,57 +68,70 @@ export default async function ClientDetailPage({
   const boundRegenerateInvite = regenerateInvite.bind(null, client.id);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-4 py-12">
-      <div>
-        <Link href="/dashboard" className="text-sm underline">
-          Back to dashboard
-        </Link>
-      </div>
+    <div className="flex flex-col gap-10">
+      <Link
+        href="/dashboard"
+        className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+      >
+        ← Clients
+      </Link>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{client.name}</h1>
-          <p className="text-sm text-gray-600">{client.email}</p>
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
+            {client.name}
+          </h1>
+          <p className="text-sm text-neutral-500">{client.email}</p>
+          <span
+            className={`mt-1 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[client.status] ?? "bg-neutral-100 text-neutral-600"}`}
+          >
+            {STATUS_LABEL[client.status] ?? client.status}
+          </span>
         </div>
         <form action={boundToggleArchived}>
-          <button type="submit" className="rounded border px-3 py-2 text-sm">
+          <button type="submit" className={secondaryButtonStyle}>
             {client.status === "ARCHIVED" ? "Reactivate" : "Archive"}
           </button>
         </form>
       </div>
 
       {inviteLink && (
-        <section className="flex flex-col gap-2 rounded border p-4">
-          <h2 className="text-sm font-medium">
+        <section className="flex flex-col gap-3 rounded-md border border-neutral-200 bg-neutral-50 p-4">
+          <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
             {inviteExpired ? "Invite link (expired)" : "Invite link"}
           </h2>
-          <p className="break-all text-sm text-gray-600">{inviteLink}</p>
+          <p className="break-all text-sm text-neutral-700">{inviteLink}</p>
           <form action={boundRegenerateInvite}>
-            <button type="submit" className="text-sm underline">
+            <button
+              type="submit"
+              className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
+            >
               Regenerate link
             </button>
           </form>
         </section>
       )}
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-medium">Client profile</h2>
+      <section className="flex flex-col gap-5 border-t border-neutral-200 pt-8">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          Client profile
+        </h2>
         <form action={boundUpdateProfile} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm">
-            Goals
+          <label className="flex flex-col gap-1.5">
+            <span className={labelStyle}>Goals</span>
             <textarea
               name="goals"
               defaultValue={client.profile?.goals ?? ""}
-              className="rounded border px-3 py-2"
+              className={inputStyle}
               rows={2}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Experience level
+          <label className="flex flex-col gap-1.5">
+            <span className={labelStyle}>Experience level</span>
             <select
               name="experienceLevel"
               defaultValue={client.profile?.experienceLevel ?? ""}
-              className="rounded border px-3 py-2"
+              className={inputStyle}
             >
               <option value="">Not set</option>
               {EXPERIENCE_LEVELS.map((level) => (
@@ -108,78 +141,79 @@ export default async function ClientDetailPage({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Schedule / availability
+          <label className="flex flex-col gap-1.5">
+            <span className={labelStyle}>Schedule / availability</span>
             <textarea
               name="schedule"
               defaultValue={client.profile?.schedule ?? ""}
-              className="rounded border px-3 py-2"
+              className={inputStyle}
               rows={2}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Equipment (comma-separated)
+          <label className="flex flex-col gap-1.5">
+            <span className={labelStyle}>Equipment (comma-separated)</span>
             <input
               name="equipment"
               type="text"
               defaultValue={client.profile?.equipment.join(", ") ?? ""}
-              className="rounded border px-3 py-2"
+              className={inputStyle}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Preferences
+          <label className="flex flex-col gap-1.5">
+            <span className={labelStyle}>Preferences</span>
             <textarea
               name="preferences"
               defaultValue={client.profile?.preferences ?? ""}
-              className="rounded border px-3 py-2"
+              className={inputStyle}
               rows={2}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Limitations / considerations
+          <label className="flex flex-col gap-1.5">
+            <span className={labelStyle}>Limitations / considerations</span>
             <textarea
               name="limitations"
               defaultValue={client.profile?.limitations ?? ""}
-              className="rounded border px-3 py-2"
+              className={inputStyle}
               rows={2}
             />
           </label>
-          <button
-            type="submit"
-            className="self-start rounded bg-black px-3 py-2 text-sm text-white"
-          >
+          <button type="submit" className={`mt-2 ${primaryButtonStyle}`}>
             Save profile
           </button>
         </form>
       </section>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-medium">Coach notes</h2>
-        <form action={boundAddNote} className="flex flex-col gap-2">
+      <section className="flex flex-col gap-5 border-t border-neutral-200 pt-8">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          Coach notes
+        </h2>
+        <form action={boundAddNote} className="flex flex-col gap-3">
           <textarea
             name="body"
             placeholder="Add a note..."
-            className="rounded border px-3 py-2 text-sm"
+            className={inputStyle}
             rows={2}
           />
-          <button
-            type="submit"
-            className="self-start rounded border px-3 py-2 text-sm"
-          >
+          <button type="submit" className={secondaryButtonStyle + " self-start"}>
             Add note
           </button>
         </form>
-        <ul className="flex flex-col gap-3">
-          {client.notes.map((note) => (
-            <li key={note.id} className="rounded border p-3 text-sm">
-              <p>{note.body}</p>
-              <p className="mt-1 text-xs text-gray-500">
-                {note.createdAt.toLocaleString()}
-              </p>
-            </li>
-          ))}
-        </ul>
+        {client.notes.length > 0 && (
+          <ul className="flex flex-col gap-4">
+            {client.notes.map((note) => (
+              <li
+                key={note.id}
+                className="border-t border-neutral-100 pt-4 text-sm first:border-0 first:pt-0"
+              >
+                <p className="text-neutral-800">{note.body}</p>
+                <p className="mt-1 text-xs text-neutral-400">
+                  {note.createdAt.toLocaleString()}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
-    </main>
+    </div>
   );
 }

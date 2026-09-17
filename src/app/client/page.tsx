@@ -23,13 +23,18 @@ export default async function ClientHomePage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center gap-4 px-4 text-center">
-      <h1 className="text-2xl font-semibold">You&apos;re connected with {client.coach.name}</h1>
-      <p className="text-sm text-gray-600">
+    <main className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center gap-3 px-6 text-center">
+      <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
+        You&apos;re connected with {client.coach.name}
+      </h1>
+      <p className="text-sm text-neutral-500">
         Check-ins and programming will show up here soon.
       </p>
-      <form action={logout}>
-        <button type="submit" className="text-sm underline">
+      <form action={logout} className="mt-2">
+        <button
+          type="submit"
+          className="text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
+        >
           Log out
         </button>
       </form>

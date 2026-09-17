@@ -4,6 +4,12 @@ import { notFound } from "next/navigation";
 import { getCurrentCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
+  inputStyle,
+  labelStyle,
+  primaryButtonStyle,
+  secondaryButtonStyle,
+} from "@/lib/ui";
+import {
   addNote,
   regenerateInvite,
   toggleArchived,
@@ -24,14 +30,6 @@ const STATUS_LABEL: Record<string, string> = {
   ARCHIVED: "Archived",
 };
 
-const inputStyle =
-  "rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900";
-const labelStyle = "text-sm font-medium text-neutral-700";
-const secondaryButtonStyle =
-  "inline-flex items-center justify-center rounded-md border border-neutral-300 px-3.5 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50";
-const primaryButtonStyle =
-  "inline-flex items-center justify-center self-start rounded-md bg-neutral-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-700";
-
 export default async function ClientDetailPage({
   params,
 }: {
@@ -46,6 +44,7 @@ export default async function ClientDetailPage({
       profile: true,
       invite: true,
       notes: { orderBy: { createdAt: "desc" } },
+      programs: { where: { isActive: true }, take: 1 },
     },
   });
 
@@ -111,6 +110,25 @@ export default async function ClientDetailPage({
           </form>
         </section>
       )}
+
+      <section className="flex flex-col gap-3 border-t border-neutral-200 pt-8">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          Programs
+        </h2>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-neutral-700">
+            {client.programs[0]
+              ? `Active: ${client.programs[0].name}`
+              : "No active program"}
+          </p>
+          <Link
+            href={`/dashboard/clients/${client.id}/programs`}
+            className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
+          >
+            Manage programs →
+          </Link>
+        </div>
+      </section>
 
       <section className="flex flex-col gap-5 border-t border-neutral-200 pt-8">
         <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">

@@ -93,13 +93,16 @@ model ClientInvite {
 }
 
 model Program {
-  id        String   @id @default(uuid())
-  clientId  String
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  name      String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(uuid())
+  clientId      String
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name          String
+  isActive      Boolean   @default(true)
+  startDate     DateTime  @default(now())
+  activatedAt   DateTime?
+  deactivatedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   weeks ProgramWeek[]
 
@@ -114,6 +117,7 @@ model ProgramWeek {
   notes      String?
 
   workouts Workout[]
+  checkIns CheckIn[]
 
   @@unique([programId, weekNumber])
 }
@@ -155,6 +159,8 @@ model CheckIn {
   id            String        @id @default(uuid())
   clientId      String
   client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  programWeekId String?
+  programWeek   ProgramWeek?  @relation(fields: [programWeekId], references: [id], onDelete: SetNull)
   weekOf        DateTime
   status        CheckInStatus @default(PENDING)
   bodyWeight    Float?

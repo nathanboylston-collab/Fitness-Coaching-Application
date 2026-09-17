@@ -1,27 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { notFound, redirect } from "next/navigation";
-import { getCurrentCoach } from "@/lib/auth";
+import { getCurrentCoach, getOwnedClient } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateInviteToken, inviteExpiryDate } from "@/lib/invite-token";
 import type { ExperienceLevel } from "@/generated/prisma/client";
 
-async function getOwnedClient(clientId: string) {
-  const coach = await getCurrentCoach();
-  const client = await prisma.client.findFirst({
-    where: { id: clientId, coachId: coach.id },
-  });
-
-  if (!client) {
-    notFound();
-  }
-
-  return client;
-}
-
 export async function updateProfile(clientId: string, formData: FormData) {
-  await getOwnedClient(clientId);
+  const coach = await getCurrentCoach();
+  await getOwnedClient(coach.id, clientId);
 
   const goals = String(formData.get("goals") ?? "").trim() || null;
   const experienceLevel =
@@ -53,7 +40,8 @@ export async function updateProfile(clientId: string, formData: FormData) {
 }
 
 export async function addNote(clientId: string, formData: FormData) {
-  await getOwnedClient(clientId);
+  const coach = await getCurrentCoach();
+  await getOwnedClient(coach.id, clientId);
 
   const body = String(formData.get("body") ?? "").trim();
   if (!body) return;
@@ -64,7 +52,8 @@ export async function addNote(clientId: string, formData: FormData) {
 }
 
 export async function toggleArchived(clientId: string) {
-  const client = await getOwnedClient(clientId);
+  const coach = await getCurrentCoach();
+  const client = await getOwnedClient(coach.id, clientId);
 
   await prisma.client.update({
     where: { id: clientId },
@@ -75,7 +64,8 @@ export async function toggleArchived(clientId: string) {
 }
 
 export async function regenerateInvite(clientId: string) {
-  await getOwnedClient(clientId);
+  const coach = await getCurrentCoach();
+  await getOwnedClient(coach.id, clientId);
 
   await prisma.clientInvite.update({
     where: { clientId },
